@@ -1,0 +1,239 @@
+{
+  "name": "workflow-slack-trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const text = $('Get the reacted message').first().json.messages[0].text;\nconst match = text.match(/Ticket ID:\\s*(\\S+)/);\nconst ticket_id = match ? match[1] : null;\n\nreturn [{\n  json: { ticket_id }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -320
+      ],
+      "id": "7a908562-54f8-4a66-9551-31329d607e97",
+      "name": "Extract Ticket ID",
+      "notesInFlow": true,
+      "notes": "Mentioned in the message"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "38750a31-b0c9-80b8-904d-ef9c3de1c29e",
+          "mode": "list",
+          "cachedResultName": "Ticket Requests",
+          "cachedResultUrl": "https://app.notion.com/p/38750a31b0c980b8904def9c3de1c29e"
+        },
+        "limit": 1,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Ticket ID|title",
+              "condition": "equals",
+              "titleValue": "={{ $('Extract Ticket ID').first().json.ticket_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        -320
+      ],
+      "id": "6d0170e3-0a10-4590-a513-69ed628aba81",
+      "name": "Get the corresponding ticket page",
+      "notesInFlow": true,
+      "alwaysOutputData": false,
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "mXS5YIQuMfN9pq3z",
+          "name": "Notion OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=  https://api.notion.com/v1/pages/{{ $('Get the corresponding ticket page').item.json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"Status\": {\n      \"select\": {\n        \"name\": \"{{ \n          $('Slack Reaction Trigger').first().json.reaction === 'eyes' ? 'In Progress' :\n          $('Slack Reaction Trigger').first().json.reaction === 'white_check_mark' ? 'Completed' :\n          'Unstarted'\n        }}\"\n      }\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        -320
+      ],
+      "id": "46ba3eaf-b960-40c7-8415-c67f8870fc18",
+      "name": "Modify the Status",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IYN62ItxCsim2VOl",
+          "name": "Acces to Notion"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "trigger": [
+          "reaction_added"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0BCAL3D0J2",
+          "mode": "list",
+          "cachedResultName": "urgent-tickets"
+        },
+        "options": {
+          "reactionEmojis": "eyes, white_check_mark"
+        }
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "id": "82441a33-5f8d-451b-bc9b-a88c0d02959a",
+      "name": "Slack Reaction Trigger",
+      "webhookId": "bb8a3e36-e676-4da4-af04-c2bc2c0de114",
+      "notesInFlow": true,
+      "credentials": {
+        "slackApi": {
+          "id": "subm1wxwi4HVBh82",
+          "name": "Slack account"
+        }
+      },
+      "notes": "\"eyes\" or \"white_check_mark\""
+    },
+    {
+      "parameters": {
+        "url": "https://slack.com/api/conversations.history",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $('Slack Reaction Trigger').first().json.item.channel }}"
+            },
+            {
+              "name": "latest",
+              "value": "={{ $('Slack Reaction Trigger').first().json.item.ts }}"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            },
+            {
+              "name": "inclusive",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        -320
+      ],
+      "id": "d81c8075-3ca7-4708-9a01-a8821257eef0",
+      "name": "Get the reacted message",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uPAyLFryJplj9Ms7",
+          "name": "Access to Slack"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract Ticket ID": {
+      "main": [
+        [
+          {
+            "node": "Get the corresponding ticket page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the corresponding ticket page": {
+      "main": [
+        [
+          {
+            "node": "Modify the Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Reaction Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get the reacted message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the reacted message": {
+      "main": [
+        [
+          {
+            "node": "Extract Ticket ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "46b4333b-798a-4210-bb75-6898dd822031",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "964442a2d3efe51ecb1fc81cebd4b0501536bbe5ed58364520c020650920f10a"
+  },
+  "nodeGroups": [],
+  "id": "LOnbtIT2yE6FJxdm",
+  "tags": []
+}
