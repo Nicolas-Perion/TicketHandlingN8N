@@ -29,10 +29,10 @@ Slack trigger workflow:
 
 ## Features
 
-- **AI-powered classification** - Gemini analyses each ticket and returns an urgency score and sentiment
-- **Adaptive email tone** - The response email adapts its tone based on the detected sentiment (reassuring, apologetic, or factual)
+- **AI-powered classification** - Gemini analyses each ticket and returns an urgency score (true/false) and sentiment (happy, angry or stressed)
+- **Adaptive email tone** - The response email adapts its tone based on the detected sentiment (reassuring, apologetic or factual)
 - **Notion tracking** - Every ticket is logged in a Notion database with its metadata and status
-- **Slack notifications** - Urgent tickets trigger an immediate alert in a dedicated Slack channel
+- **Slack notifications** - **Urgent** tickets trigger an immediate alert in a dedicated Slack channel
 - **Status updates via emoji** - A manager reacting with 👀 or ✅ on Slack automatically updates the ticket status in Notion
 
 ---
@@ -42,13 +42,14 @@ Slack trigger workflow:
 1. Tally form
 
 ![Tally form](images/tally-form.png)
+
 With a angry and urgent request.
 
 2. Notion database
 
 ![Notion database](images/notion-database.png)
-The status is completed because a manager reacted with ✅ to the Slack notification.
-The urgent checkbox is checked (since the request was urgent).
+The status is completed because a manager reacted with ✅ to the Slack notification (see below).
+The urgent checkbox is checked since the request was obviously urgent.
 
 3. Slack channel
 
@@ -112,9 +113,9 @@ chat:write
 3. Enable **Event Subscriptions** and subscribe to the `reaction_added` bot event.
 4. Copy and save somewhere your **Bot User OAuth Token** (in **Install App**)
 
-### 4. Set up the Notion database and Notion API key
+### 4. Set up the Notion database
 
-1. Create a Notion database named **Ticket Requests** with the following properties:
+Create a Notion database named **Ticket Requests** with the following properties:
 
 | Property | Type |
 |---|---|
@@ -136,14 +137,14 @@ Main workflow:
 - **2.5 Flash Lite** Node - paste your Google Gemini API key in the field **API key**, it creates a **Google Gemini(PaLM) Api account** credential
 - **Create a ticket page** Node - connect your Notion account and share the **Ticket Requests** database with the integration, it will create a **Notion OAuth2 API** credential
 - **Send a notif.** Node - for the credential, use an API key (not a OAuth2 connection) and paste your Bot User OAuth Token in the field **API key**, rename this credential **Slack account**
-- **Gmail OAuth2** - connect the Google account you want to send email to the customer with (through Google Gmail), it will create a **Gmail OAuth2 API** credential
+- **Gmail OAuth2** - connect the Google account you want to send email to the customer with (via Google Gmail), it will create a **Gmail OAuth2 API** credential
 
 Slack trigger workflow:
 
 - **Slack Reaction Trigger** Node - use your **Slack Account** credential
 - **Get the reacted message** Node - click next to the field **Header Auth** to create a new Header Auth credential, in the field **Name** type **Authorization**, in the field **Value** type **Bearer [your Bot User OAuth Token]** and rename the credential **Slack Header Auth account**
 - **Get the corresponding ticket page** Node - your **Notion OAuth2 API** credential should already be set up, if needed select the **Ticket Requests** database for the **Database** field
-- **Modify the Status** Node - in the field **Header Auth** select **Create new credential" and type **Authorization** in the field **Name** and **Bearer [your Notion API key]** in the field **Value** and rename the credential **Notion Header Auth account**
+- **Modify the Status** Node - in the field **Header Auth** select **Create new credential** and type **Authorization** in the field **Name** and **Bearer [your Notion API key]** in the field **Value** and rename the credential **Notion Header Auth account**
 
 ### 6. Publish both workflows
 
@@ -151,7 +152,7 @@ Just click on the **Publish** button.
 
 ### 7. Final setup for Slack
 
-1. In the **Slack Reaction Trigger** Node (Slack trigger workflow), copy the Production Webhook URL and paste it in the **Request URL** field of **Event Subscription** (in your app settings dashboard)
+1. In the **Slack Reaction Trigger** Node (Slack trigger workflow), copy the Production Webhook URL and paste it in the **Request URL** field of **Event Subscription** (in your app settings dashboard). It should validate the URL.
 2. In the app setting dashboard, go in the **Install App** section and install the app.
 
 ### 8. Configure Tally
@@ -168,7 +169,7 @@ Just click on the **Publish** button.
 
 ## Usage
 
-1. A client submits the Tally form (can acces it with the share link)
+1. A client submits the Tally form (can be accessed with the **Share link**)
 2. n8n receives the webhook and immediately acknowledges it
 3. Gemini classifies the ticket (urgency + sentiment)
 4. A page is created in the Notion database
