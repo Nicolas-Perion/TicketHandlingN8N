@@ -132,6 +132,7 @@ Create a Notion database named **Ticket Requests** with the following properties
 ### 5. Configure credentials
 
 In n8n, all the nodes with a red warning sign requires a credential to be set up.
+
 Main workflow:
 
 - **2.5 Flash Lite** Node - paste your Google Gemini API key in the field **API key**, it creates a **Google Gemini(PaLM) Api account** credential
